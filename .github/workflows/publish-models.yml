@@ -1,0 +1,60 @@
+name: Publish pinned Gemma assets
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: model-release
+    steps:
+      - name: Check out release metadata
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Download and verify pinned source models
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          set -eu
+          python -m pip install --disable-pip-version-check 'huggingface_hub==0.34.4'
+          python .github/scripts/fetch_and_manifest.py
+
+      - name: Require reviewed Gemma terms
+        run: |
+          set -eu
+          test -s GEMMA-TERMS.md
+          if grep -q 'must not publish' GEMMA-TERMS.md; then
+            echo 'GEMMA-TERMS.md is still a release-blocking placeholder.' >&2
+            exit 1
+          fi
+
+      - name: Refuse to overwrite an existing immutable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          if gh release view cadence-models-v1 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo 'cadence-models-v1 already exists; immutable releases are not overwritten.' >&2
+            exit 1
+          fi
+
+      - name: Publish immutable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          gh release create cadence-models-v1 \
+            --repo "$GITHUB_REPOSITORY" \
+            --title 'Cadence model assets v1' \
+            --notes-file README.md \
+            Gemma3-1B-IT_multi-prefill-seq_q4_ekv4096.litertlm \
+            gemma3-270m-it-q8.litertlm \
+            NOTICE GEMMA-TERMS.md model-manifest.json

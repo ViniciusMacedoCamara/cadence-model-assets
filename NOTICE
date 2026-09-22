@@ -1,0 +1,12 @@
+Cadence model assets
+
+This repository distributes versioned model artifacts for Cadence's optional
+on-device prescription-text organization feature. The artifacts are based on
+Google Gemma models and are subject to the applicable Gemma Terms of Use.
+
+The official Gemma terms are available at:
+https://ai.google.dev/gemma/terms
+
+The model manifest in each release records the upstream source revision and
+the verified SHA-256 digest. Cadence is not medical advice, and the local
+model does not confirm prescriptions or create reminders.
